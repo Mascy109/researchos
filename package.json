@@ -7,14 +7,12 @@
     "build": "next build",
     "start": "next start"
   },
-  "dependencies": {
-    "docx": "latest",
-    "mammoth": "latest",
-    "next": "latest",
-    "openai": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "xlsx": "latest"
-    "pptxgenjs": "^3.12.0"
-  }
+ "dependencies": {
+  "next": "latest",
+  "react": "latest",
+  "react-dom": "latest",
+  "xlsx": "...",
+  "mammoth": "...",
+  "pptxgenjs": "^3.12.0"
+}
 }
