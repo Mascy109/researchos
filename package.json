@@ -15,5 +15,6 @@
     "react": "latest",
     "react-dom": "latest",
     "xlsx": "latest"
+    "pptxgenjs": "^3.12.0"
   }
 }
