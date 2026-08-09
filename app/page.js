@@ -17,7 +17,23 @@ export default function Home() {
   const [files, setFiles] = useState([]);
   const [extractedData, setExtractedData] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [activeTab, setActiveTab] = useState("summary");
+
+  const [presentationType, setPresentationType] =
+    useState("research");
+
+  const [slideCount, setSlideCount] = useState("8");
+
+  const [presentationStyle, setPresentationStyle] =
+    useState("consulting");
+
+  const [presentationGenerated, setPresentationGenerated] =
+    useState(false);
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const [slides, setSlides] = useState([]);
 
   function updateProject(field, value) {
     setProject((previous) => ({
@@ -113,13 +129,10 @@ export default function Home() {
     setActiveTab("summary");
   }
 
-  /*
-   * TEMPORARY PROTOTYPE DATA
-   *
-   * This is intentionally mock data.
-   * Later we will replace this with the actual AI analysis
-   * generated from the uploaded transcripts.
-   */
+  function goToPresentation() {
+    setStep(4);
+    setPresentationGenerated(false);
+  }
 
   const mockAnalysis = {
     summary: {
@@ -273,6 +286,126 @@ export default function Home() {
     ],
   };
 
+  function createSlides() {
+    let generatedSlides = [];
+
+    generatedSlides.push({
+      type: "title",
+      title:
+        project.name || "Research Study",
+      subtitle:
+        "Consumer Research Findings & Strategic Implications",
+      label: "RESEARCHOS",
+    });
+
+    generatedSlides.push({
+      type: "executive",
+      title: "Executive Summary",
+      subtitle:
+        "What the research tells us",
+      bullets: [
+        "Quality and reliability are major drivers of consumer confidence.",
+        "Trust and recommendations reduce uncertainty during purchase decisions.",
+        "Price remains important, but consumers do not always choose the cheapest option.",
+      ],
+    });
+
+    generatedSlides.push({
+      type: "themes",
+      title: "Four themes shape the decision",
+      subtitle:
+        "The strongest patterns emerging from the research",
+      themes: [
+        ["01", "Quality & Performance", "HIGH"],
+        ["02", "Trust & Reputation", "HIGH"],
+        ["03", "Price Sensitivity", "MEDIUM"],
+        ["04", "Availability & Convenience", "MEDIUM"],
+      ],
+    });
+
+    generatedSlides.push({
+      type: "needs",
+      title: "Consumers need confidence before they commit",
+      subtitle:
+        "The underlying needs expressed across the research",
+      bullets: mockAnalysis.needs,
+    });
+
+    generatedSlides.push({
+      type: "painpoints",
+      title: "Uncertainty remains a major barrier",
+      subtitle:
+        "Where consumers experience friction",
+      bullets: mockAnalysis.painPoints,
+    });
+
+    generatedSlides.push({
+      type: "segments",
+      title: "Three consumer mindsets emerge",
+      subtitle:
+        "Different consumers approach the decision differently",
+      segments: mockAnalysis.segments,
+    });
+
+    generatedSlides.push({
+      type: "evidence",
+      title: "The findings are grounded in consumer voices",
+      subtitle:
+        "Illustrative evidence from the research",
+      quotes: mockAnalysis.evidence,
+    });
+
+    generatedSlides.push({
+      type: "implications",
+      title: "What this means for the brand",
+      subtitle:
+        "Strategic implications from the research",
+      bullets: mockAnalysis.implications,
+    });
+
+    if (slideCount === "10") {
+      generatedSlides.splice(7, 0, {
+        type: "motivations",
+        title: "What motivates consumers",
+        subtitle:
+          "Key drivers behind positive decision-making",
+        bullets: mockAnalysis.motivations,
+      });
+
+      generatedSlides.splice(8, 0, {
+        type: "barriers",
+        title: "What can prevent conversion",
+        subtitle:
+          "Barriers that need to be addressed",
+        bullets: mockAnalysis.barriers,
+      });
+    }
+
+    if (slideCount === "6") {
+      generatedSlides = generatedSlides.filter(
+        (_, index) =>
+          ![3, 4].includes(index)
+      );
+    }
+
+    setSlides(generatedSlides);
+    setCurrentSlide(0);
+    setPresentationGenerated(true);
+  }
+
+  function updateSlide(field, value) {
+    setSlides((previous) =>
+      previous.map((slide, index) =>
+        index === currentSlide
+          ? {
+              ...slide,
+              [field]: value,
+            }
+          : slide
+      )
+    );
+  }
+
   function renderTabContent() {
     if (activeTab === "summary") {
       return (
@@ -284,17 +417,22 @@ export default function Home() {
           </p>
 
           <div className="finding-grid">
-            {mockAnalysis.summary.findings.map((finding, index) => (
-              <div className="finding-card" key={index}>
-                <div className="eyebrow">
-                  KEY FINDING {index + 1}
+            {mockAnalysis.summary.findings.map(
+              (finding, index) => (
+                <div
+                  className="finding-card"
+                  key={index}
+                >
+                  <div className="eyebrow">
+                    KEY FINDING {index + 1}
+                  </div>
+
+                  <h3>{finding.title}</h3>
+
+                  <p>{finding.text}</p>
                 </div>
-
-                <h3>{finding.title}</h3>
-
-                <p>{finding.text}</p>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       );
@@ -307,7 +445,10 @@ export default function Home() {
 
           <div className="theme-grid">
             {mockAnalysis.themes.map((theme) => (
-              <div className="theme-card" key={theme.number}>
+              <div
+                className="theme-card"
+                key={theme.number}
+              >
                 <div className="theme-number">
                   {theme.number}
                 </div>
@@ -337,12 +478,17 @@ export default function Home() {
         <div>
           <h2>Consumer Needs</h2>
 
-          {mockAnalysis.needs.map((item, index) => (
-            <div className="list-item" key={index}>
-              <strong>{index + 1}</strong>
-              <span>{item}</span>
-            </div>
-          ))}
+          {mockAnalysis.needs.map(
+            (item, index) => (
+              <div
+                className="list-item"
+                key={index}
+              >
+                <strong>{index + 1}</strong>
+                <span>{item}</span>
+              </div>
+            )
+          )}
         </div>
       );
     }
@@ -352,11 +498,16 @@ export default function Home() {
         <div>
           <h2>Pain Points</h2>
 
-          {mockAnalysis.painPoints.map((item, index) => (
-            <div className="pain-point" key={index}>
-              {item}
-            </div>
-          ))}
+          {mockAnalysis.painPoints.map(
+            (item, index) => (
+              <div
+                className="pain-point"
+                key={index}
+              >
+                {item}
+              </div>
+            )
+          )}
         </div>
       );
     }
@@ -366,11 +517,16 @@ export default function Home() {
         <div>
           <h2>Motivations</h2>
 
-          {mockAnalysis.motivations.map((item, index) => (
-            <div className="motivation" key={index}>
-              {item}
-            </div>
-          ))}
+          {mockAnalysis.motivations.map(
+            (item, index) => (
+              <div
+                className="motivation"
+                key={index}
+              >
+                {item}
+              </div>
+            )
+          )}
         </div>
       );
     }
@@ -380,11 +536,16 @@ export default function Home() {
         <div>
           <h2>Barriers</h2>
 
-          {mockAnalysis.barriers.map((item, index) => (
-            <div className="barrier" key={index}>
-              {item}
-            </div>
-          ))}
+          {mockAnalysis.barriers.map(
+            (item, index) => (
+              <div
+                className="barrier"
+                key={index}
+              >
+                {item}
+              </div>
+            )
+          )}
         </div>
       );
     }
@@ -395,21 +556,28 @@ export default function Home() {
           <h2>Respondent Segments</h2>
 
           <div className="segment-grid">
-            {mockAnalysis.segments.map((segment) => (
-              <div className="segment-card" key={segment.name}>
-                <h3>{segment.name}</h3>
+            {mockAnalysis.segments.map(
+              (segment) => (
+                <div
+                  className="segment-card"
+                  key={segment.name}
+                >
+                  <h3>{segment.name}</h3>
 
-                <p>{segment.description}</p>
+                  <p>{segment.description}</p>
 
-                <ul>
-                  {segment.characteristics.map(
-                    (characteristic, index) => (
-                      <li key={index}>{characteristic}</li>
-                    )
-                  )}
-                </ul>
-              </div>
-            ))}
+                  <ul>
+                    {segment.characteristics.map(
+                      (characteristic, index) => (
+                        <li key={index}>
+                          {characteristic}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )
+            )}
           </div>
         </div>
       );
@@ -421,23 +589,33 @@ export default function Home() {
           <h2>Evidence & Quotes</h2>
 
           <p className="description">
-            Every research insight should eventually be supported
-            by evidence from the underlying interviews.
+            Every research insight should eventually
+            be supported by evidence from the
+            underlying interviews.
           </p>
 
-          {mockAnalysis.evidence.map((item, index) => (
-            <div className="quote-card" key={index}>
-              <p className="quote">
-                "{item.quote}"
-              </p>
+          {mockAnalysis.evidence.map(
+            (item, index) => (
+              <div
+                className="quote-card"
+                key={index}
+              >
+                <p className="quote">
+                  "{item.quote}"
+                </p>
 
-              <div className="quote-meta">
-                <strong>{item.respondent}</strong>
-                <span>•</span>
-                <span>{item.theme}</span>
+                <div className="quote-meta">
+                  <strong>
+                    {item.respondent}
+                  </strong>
+
+                  <span>•</span>
+
+                  <span>{item.theme}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       );
     }
@@ -448,16 +626,227 @@ export default function Home() {
           <h2>Strategic Implications</h2>
 
           <p className="description">
-            What the research could mean for the brand, product
-            or business.
+            What the research could mean for the
+            brand, product or business.
           </p>
 
-          {mockAnalysis.implications.map((item, index) => (
-            <div className="implication" key={index}>
-              <strong>→</strong>
-              <span>{item}</span>
-            </div>
-          ))}
+          {mockAnalysis.implications.map(
+            (item, index) => (
+              <div
+                className="implication"
+                key={index}
+              >
+                <strong>→</strong>
+
+                <span>{item}</span>
+              </div>
+            )
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  }
+
+  function renderPresentationSlide(slide) {
+    if (slide.type === "title") {
+      return (
+        <div className="ppt-title-slide">
+          <div className="ppt-brand">
+            {slide.label}
+          </div>
+
+          <h1>{slide.title}</h1>
+
+          <p>{slide.subtitle}</p>
+
+          <div className="ppt-footer">
+            Research analysis • {project.category || "Market Research"}
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "executive") {
+      return (
+        <div className="ppt-content-slide">
+          <div className="ppt-small-label">
+            EXECUTIVE SUMMARY
+          </div>
+
+          <h1>{slide.title}</h1>
+
+          <p className="ppt-subtitle">
+            {slide.subtitle}
+          </p>
+
+          <div className="ppt-bullets">
+            {slide.bullets.map(
+              (bullet, index) => (
+                <div
+                  className="ppt-bullet"
+                  key={index}
+                >
+                  <div className="ppt-bullet-number">
+                    {String(index + 1).padStart(
+                      2,
+                      "0"
+                    )}
+                  </div>
+
+                  <div>{bullet}</div>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "themes") {
+      return (
+        <div className="ppt-content-slide">
+          <div className="ppt-small-label">
+            KEY THEMES
+          </div>
+
+          <h1>{slide.title}</h1>
+
+          <p className="ppt-subtitle">
+            {slide.subtitle}
+          </p>
+
+          <div className="ppt-theme-grid">
+            {slide.themes.map(
+              (theme) => (
+                <div
+                  className="ppt-theme"
+                  key={theme[0]}
+                >
+                  <div className="ppt-theme-number">
+                    {theme[0]}
+                  </div>
+
+                  <h3>{theme[1]}</h3>
+
+                  <span>
+                    {theme[2]} SIGNAL
+                  </span>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (
+      slide.type === "needs" ||
+      slide.type === "painpoints" ||
+      slide.type === "motivations" ||
+      slide.type === "barriers" ||
+      slide.type === "implications"
+    ) {
+      return (
+        <div className="ppt-content-slide">
+          <div className="ppt-small-label">
+            RESEARCH INSIGHT
+          </div>
+
+          <h1>{slide.title}</h1>
+
+          <p className="ppt-subtitle">
+            {slide.subtitle}
+          </p>
+
+          <div className="ppt-bullets">
+            {slide.bullets.map(
+              (bullet, index) => (
+                <div
+                  className="ppt-bullet"
+                  key={index}
+                >
+                  <div className="ppt-bullet-dot">
+                    ●
+                  </div>
+
+                  <div>{bullet}</div>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "segments") {
+      return (
+        <div className="ppt-content-slide">
+          <div className="ppt-small-label">
+            RESPONDENT SEGMENTS
+          </div>
+
+          <h1>{slide.title}</h1>
+
+          <p className="ppt-subtitle">
+            {slide.subtitle}
+          </p>
+
+          <div className="ppt-segment-grid">
+            {slide.segments.map(
+              (segment) => (
+                <div
+                  className="ppt-segment"
+                  key={segment.name}
+                >
+                  <h3>{segment.name}</h3>
+
+                  <p>
+                    {segment.description}
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.type === "evidence") {
+      return (
+        <div className="ppt-content-slide">
+          <div className="ppt-small-label">
+            CONSUMER VOICE
+          </div>
+
+          <h1>{slide.title}</h1>
+
+          <p className="ppt-subtitle">
+            {slide.subtitle}
+          </p>
+
+          <div className="ppt-quote-grid">
+            {slide.quotes.map(
+              (quote, index) => (
+                <div
+                  className="ppt-quote"
+                  key={index}
+                >
+                  <div className="quote-mark">
+                    "
+                  </div>
+
+                  <p>{quote.quote}</p>
+
+                  <small>
+                    {quote.respondent} •{" "}
+                    {quote.theme}
+                  </small>
+                </div>
+              )
+            )}
+          </div>
         </div>
       );
     }
@@ -468,10 +857,9 @@ export default function Home() {
   return (
     <main className="page">
 
-      {/* HEADER */}
-
       <header className="header">
         <div className="header-inner">
+
           <div className="logo">
             RESEARCHOS
           </div>
@@ -479,6 +867,7 @@ export default function Home() {
           <div className="header-label">
             AI Research Workspace
           </div>
+
         </div>
       </header>
 
@@ -524,7 +913,13 @@ export default function Home() {
 
           <div className="progress-line" />
 
-          <div className="progress-step">
+          <div
+            className={
+              step >= 4
+                ? "progress-step active"
+                : "progress-step"
+            }
+          >
             04 Presentation
           </div>
 
@@ -536,6 +931,7 @@ export default function Home() {
           <div>
 
             <div className="hero">
+
               <div className="eyebrow">
                 RESEARCH PROJECT
               </div>
@@ -545,14 +941,16 @@ export default function Home() {
               </h1>
 
               <p>
-                Tell ResearchOS what you're researching before
-                uploading your transcripts.
+                Tell ResearchOS what you're researching
+                before uploading your transcripts.
               </p>
+
             </div>
 
             <div className="card">
 
               <div className="field">
+
                 <label>
                   Project name
                 </label>
@@ -567,9 +965,11 @@ export default function Home() {
                   }
                   placeholder="e.g. Cement Brand Equity Study"
                 />
+
               </div>
 
               <div className="field">
+
                 <label>
                   Research objective
                 </label>
@@ -585,9 +985,11 @@ export default function Home() {
                   placeholder="What do you want this research to understand?"
                   rows={5}
                 />
+
               </div>
 
               <div className="field">
+
                 <label>
                   Category / market
                 </label>
@@ -602,9 +1004,11 @@ export default function Home() {
                   }
                   placeholder="e.g. FMCG, Automotive, Construction"
                 />
+
               </div>
 
               <div className="field">
+
                 <label>
                   Target audience
                 </label>
@@ -619,6 +1023,7 @@ export default function Home() {
                   }
                   placeholder="e.g. Urban home builders"
                 />
+
               </div>
 
               <button
@@ -639,6 +1044,7 @@ export default function Home() {
           <div>
 
             <div className="hero">
+
               <div className="eyebrow">
                 TRANSCRIPTS
               </div>
@@ -650,6 +1056,7 @@ export default function Home() {
               <p>
                 {project.name}
               </p>
+
             </div>
 
             <div className="card">
@@ -682,17 +1089,22 @@ export default function Home() {
 
                   <h3>
                     {files.length} file
-                    {files.length !== 1 ? "s" : ""} uploaded
+                    {files.length !== 1
+                      ? "s"
+                      : ""}{" "}
+                    uploaded
                   </h3>
 
-                  {files.map((file, index) => (
-                    <div
-                      className="file-row"
-                      key={index}
-                    >
-                      {file.name}
-                    </div>
-                  ))}
+                  {files.map(
+                    (file, index) => (
+                      <div
+                        className="file-row"
+                        key={index}
+                      >
+                        {file.name}
+                      </div>
+                    )
+                  )}
 
                 </div>
               )}
@@ -703,27 +1115,31 @@ export default function Home() {
                 </p>
               )}
 
-              {extractedData.length > 0 && !loading && (
-                <div className="success">
-                  <strong>
-                    ✓ Transcripts processed
-                  </strong>
+              {extractedData.length > 0 &&
+                !loading && (
+                  <div className="success">
 
-                  <p>
-                    ResearchOS has successfully extracted
-                    the transcript data.
-                  </p>
-                </div>
-              )}
+                    <strong>
+                      ✓ Transcripts processed
+                    </strong>
 
-              {extractedData.length > 0 && !loading && (
-                <button
-                  className="dark-button"
-                  onClick={goToAnalysis}
-                >
-                  Continue to Analysis →
-                </button>
-              )}
+                    <p>
+                      ResearchOS has successfully
+                      extracted the transcript data.
+                    </p>
+
+                  </div>
+                )}
+
+              {extractedData.length > 0 &&
+                !loading && (
+                  <button
+                    className="dark-button"
+                    onClick={goToAnalysis}
+                  >
+                    Continue to Analysis →
+                  </button>
+                )}
 
             </div>
 
@@ -752,10 +1168,15 @@ export default function Home() {
             </div>
 
             <div className="prototype-notice">
-              <strong>Prototype mode:</strong>{" "}
-              These insights are sample outputs for now.
-              Later, the AI analysis engine will generate
-              these insights from your actual transcripts.
+
+              <strong>
+                Prototype mode:
+              </strong>{" "}
+              These insights are sample outputs
+              for now. Later, the AI analysis engine
+              will generate these insights from your
+              actual transcripts.
+
             </div>
 
             <div className="tabs">
@@ -770,19 +1191,23 @@ export default function Home() {
                 ["segments", "Segments"],
                 ["evidence", "Evidence & Quotes"],
                 ["implications", "Implications"],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={
-                    activeTab === id
-                      ? "tab active"
-                      : "tab"
-                  }
-                >
-                  {label}
-                </button>
-              ))}
+              ].map(
+                ([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() =>
+                      setActiveTab(id)
+                    }
+                    className={
+                      activeTab === id
+                        ? "tab active"
+                        : "tab"
+                    }
+                  >
+                    {label}
+                  </button>
+                )
+              )}
 
             </div>
 
@@ -797,21 +1222,23 @@ export default function Home() {
               </div>
 
               <h2>
-                Turn these insights into a presentation
+                Turn these insights into a
+                presentation
               </h2>
 
               <p>
-                ResearchOS will transform the research analysis
-                into a structured presentation containing
-                insights, evidence, implications and
+                ResearchOS will transform the
+                research analysis into a structured
+                presentation containing insights,
+                evidence, implications and
                 recommendations.
               </p>
 
               <button
-                className="disabled-button"
-                disabled
+                className="presentation-button"
+                onClick={goToPresentation}
               >
-                Presentation Builder — Coming Next
+                Build Presentation →
               </button>
 
             </div>
@@ -819,9 +1246,393 @@ export default function Home() {
           </div>
         )}
 
-      </div>
+        {/* PRESENTATION BUILDER */}
 
-      {/* STYLES */}
+        {step === 4 && !presentationGenerated && (
+          <div>
+
+            <div className="hero">
+
+              <div className="eyebrow">
+                PRESENTATION BUILDER
+              </div>
+
+              <h1>
+                Build your research deck.
+              </h1>
+
+              <p>
+                Turn the analysis into a structured
+                presentation ready for clients,
+                stakeholders or internal teams.
+              </p>
+
+            </div>
+
+            <div className="builder-layout">
+
+              <div className="card">
+
+                <h2>
+                  Presentation setup
+                </h2>
+
+                <p className="builder-description">
+                  Choose how ResearchOS should structure
+                  the presentation.
+                </p>
+
+                <div className="field">
+
+                  <label>
+                    Presentation type
+                  </label>
+
+                  <select
+                    value={presentationType}
+                    onChange={(event) =>
+                      setPresentationType(
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="research">
+                      Research Findings
+                    </option>
+
+                    <option value="executive">
+                      Executive Summary
+                    </option>
+
+                    <option value="client">
+                      Client Presentation
+                    </option>
+                  </select>
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Number of slides
+                  </label>
+
+                  <select
+                    value={slideCount}
+                    onChange={(event) =>
+                      setSlideCount(
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="6">
+                      6 slides
+                    </option>
+
+                    <option value="8">
+                      8 slides
+                    </option>
+
+                    <option value="10">
+                      10 slides
+                    </option>
+                  </select>
+
+                </div>
+
+                <div className="field">
+
+                  <label>
+                    Presentation style
+                  </label>
+
+                  <select
+                    value={presentationStyle}
+                    onChange={(event) =>
+                      setPresentationStyle(
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="consulting">
+                      Consulting
+                    </option>
+
+                    <option value="minimal">
+                      Minimal
+                    </option>
+
+                    <option value="corporate">
+                      Corporate
+                    </option>
+                  </select>
+
+                </div>
+
+                <button
+                  className="primary-button"
+                  onClick={createSlides}
+                >
+                  Generate Presentation →
+                </button>
+
+              </div>
+
+              <div className="builder-preview">
+
+                <div className="preview-label">
+                  DECK PREVIEW
+                </div>
+
+                <div className="mini-slide">
+
+                  <div className="mini-brand">
+                    RESEARCHOS
+                  </div>
+
+                  <div className="mini-title">
+                    {project.name ||
+                      "Research Study"}
+                  </div>
+
+                  <div className="mini-subtitle">
+                    Consumer Research Findings
+                    & Strategic Implications
+                  </div>
+
+                  <div className="mini-lines">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+
+                </div>
+
+                <p>
+                  Your presentation will be
+                  generated from the research
+                  analysis.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* PRESENTATION */}
+
+        {step === 4 &&
+          presentationGenerated && (
+            <div>
+
+              <div className="presentation-header">
+
+                <div>
+
+                  <div className="eyebrow">
+                    PRESENTATION BUILDER
+                  </div>
+
+                  <h1>
+                    {project.name ||
+                      "Research Presentation"}
+                  </h1>
+
+                  <p>
+                    {slides.length} slides •{" "}
+                    {presentationStyle} style
+                  </p>
+
+                </div>
+
+                <button
+                  className="secondary-button"
+                  onClick={() =>
+                    setPresentationGenerated(
+                      false
+                    )
+                  }
+                >
+                  ← Edit Settings
+                </button>
+
+              </div>
+
+              <div className="presentation-workspace">
+
+                <div className="slide-sidebar">
+
+                  <div className="sidebar-title">
+                    SLIDES
+                  </div>
+
+                  {slides.map(
+                    (slide, index) => (
+                      <button
+                        className={
+                          index === currentSlide
+                            ? "slide-thumbnail active"
+                            : "slide-thumbnail"
+                        }
+                        key={index}
+                        onClick={() =>
+                          setCurrentSlide(index)
+                        }
+                      >
+
+                        <span>
+                          {String(
+                            index + 1
+                          ).padStart(2, "0")}
+                        </span>
+
+                        <div>
+                          {slide.title}
+                        </div>
+
+                      </button>
+                    )
+                  )}
+
+                </div>
+
+                <div className="slide-main">
+
+                  <div className="slide-toolbar">
+
+                    <div>
+                      Slide{" "}
+                      {currentSlide + 1} of{" "}
+                      {slides.length}
+                    </div>
+
+                    <div className="slide-controls">
+
+                      <button
+                        disabled={
+                          currentSlide === 0
+                        }
+                        onClick={() =>
+                          setCurrentSlide(
+                            currentSlide - 1
+                          )
+                        }
+                      >
+                        ←
+                      </button>
+
+                      <button
+                        disabled={
+                          currentSlide ===
+                          slides.length - 1
+                        }
+                        onClick={() =>
+                          setCurrentSlide(
+                            currentSlide + 1
+                          )
+                        }
+                      >
+                        →
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                  <div className="ppt-canvas">
+
+                    {renderPresentationSlide(
+                      slides[currentSlide]
+                    )}
+
+                  </div>
+
+                  <div className="edit-slide">
+
+                    <div className="eyebrow">
+                      EDIT SLIDE
+                    </div>
+
+                    <label>
+                      Slide title
+                    </label>
+
+                    <input
+                      value={
+                        slides[currentSlide]
+                          ?.title || ""
+                      }
+                      onChange={(event) =>
+                        updateSlide(
+                          "title",
+                          event.target.value
+                        )
+                      }
+                    />
+
+                    {slides[currentSlide]
+                      ?.subtitle !==
+                      undefined && (
+                      <>
+                        <label>
+                          Subtitle
+                        </label>
+
+                        <input
+                          value={
+                            slides[currentSlide]
+                              ?.subtitle || ""
+                          }
+                          onChange={(event) =>
+                            updateSlide(
+                              "subtitle",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </>
+                    )}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div className="export-area">
+
+                <div>
+                  <div className="eyebrow">
+                    FINAL STEP
+                  </div>
+
+                  <h2>
+                    Your research story is ready.
+                  </h2>
+
+                  <p>
+                    Export functionality will be
+                    connected next. The prototype
+                    currently lets you build,
+                    review and edit the entire deck.
+                  </p>
+                </div>
+
+                <button
+                  className="export-button"
+                  disabled
+                >
+                  Export to PowerPoint — Coming Next
+                </button>
+
+              </div>
+
+            </div>
+          )}
+
+      </div>
 
       <style jsx>{`
 
@@ -837,7 +1648,7 @@ export default function Home() {
         }
 
         .header {
-          background: #ffffff;
+          background: white;
           border-bottom: 1px solid #e5e7eb;
         }
 
@@ -863,7 +1674,7 @@ export default function Home() {
         }
 
         .container {
-          max-width: 1100px;
+          max-width: 1150px;
           margin: auto;
           padding: 45px 25px 80px;
         }
@@ -918,7 +1729,7 @@ export default function Home() {
 
         .card,
         .analysis-card {
-          background: #ffffff;
+          background: white;
           border: 1px solid #e5e7eb;
           border-radius: 18px;
           padding: 35px;
@@ -935,13 +1746,15 @@ export default function Home() {
         }
 
         input,
-        textarea {
+        textarea,
+        select {
           width: 100%;
           padding: 14px;
           border: 1px solid #d1d5db;
           border-radius: 10px;
           font-size: 16px;
           font-family: Arial, sans-serif;
+          background: white;
         }
 
         textarea {
@@ -949,7 +1762,8 @@ export default function Home() {
         }
 
         .primary-button,
-        .dark-button {
+        .dark-button,
+        .presentation-button {
           width: 100%;
           padding: 16px;
           border: none;
@@ -1038,7 +1852,7 @@ export default function Home() {
         }
 
         .tabs {
-          background: #ffffff;
+          background: white;
           border: 1px solid #e5e7eb;
           border-radius: 14px;
           padding: 8px;
@@ -1086,7 +1900,7 @@ export default function Home() {
           border: 1px solid #e5e7eb;
           border-radius: 14px;
           padding: 22px;
-          background: #ffffff;
+          background: white;
         }
 
         .finding-card p,
@@ -1213,13 +2027,440 @@ export default function Home() {
           max-width: 750px;
         }
 
-        .disabled-button {
-          padding: 14px 20px;
+        .presentation-button {
+          background: white;
+          color: #111827;
+          width: auto;
+          padding: 14px 22px;
+        }
+
+        .builder-layout {
+          display: grid;
+          grid-template-columns: 1.2fr 0.8fr;
+          gap: 25px;
+        }
+
+        .builder-description {
+          color: #6b7280;
+          margin-bottom: 30px;
+        }
+
+        .builder-preview {
+          background: #111827;
+          border-radius: 18px;
+          padding: 30px;
+          color: white;
+        }
+
+        .preview-label {
+          color: #a5b4fc;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 1px;
+          margin-bottom: 20px;
+        }
+
+        .mini-slide {
+          background: white;
+          color: #111827;
+          aspect-ratio: 16 / 9;
+          border-radius: 8px;
+          padding: 25px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .mini-brand {
+          color: #4f46e5;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+        .mini-title {
+          font-size: 25px;
+          font-weight: 800;
+          margin-top: 15px;
+        }
+
+        .mini-subtitle {
+          color: #6b7280;
+          font-size: 12px;
+          margin-top: 8px;
+        }
+
+        .mini-lines {
+          margin-top: 25px;
+        }
+
+        .mini-lines span {
+          display: block;
+          height: 4px;
+          background: #e5e7eb;
+          margin-bottom: 7px;
+          border-radius: 4px;
+        }
+
+        .builder-preview > p {
+          color: #9ca3af;
+          line-height: 1.5;
+        }
+
+        .presentation-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 30px;
+        }
+
+        .presentation-header h1 {
+          margin-bottom: 5px;
+        }
+
+        .presentation-header p {
+          color: #6b7280;
+        }
+
+        .secondary-button {
+          background: white;
+          border: 1px solid #d1d5db;
+          padding: 12px 18px;
+          border-radius: 9px;
+          cursor: pointer;
+          font-weight: 700;
+        }
+
+        .presentation-workspace {
+          display: grid;
+          grid-template-columns: 260px 1fr;
+          gap: 20px;
+        }
+
+        .slide-sidebar {
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 15px;
+          padding: 15px;
+          height: fit-content;
+        }
+
+        .sidebar-title {
+          color: #6b7280;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 1px;
+          padding: 5px 8px 15px;
+        }
+
+        .slide-thumbnail {
+          width: 100%;
+          text-align: left;
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          padding: 12px 10px;
+          margin-bottom: 5px;
+          border: 1px solid transparent;
+          border-radius: 9px;
+          background: transparent;
+          cursor: pointer;
+          color: #4b5563;
+        }
+
+        .slide-thumbnail span {
+          color: #9ca3af;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .slide-thumbnail div {
+          font-size: 12px;
+          line-height: 1.4;
+        }
+
+        .slide-thumbnail.active {
+          background: #eef2ff;
+          border-color: #c7d2fe;
+          color: #3730a3;
+        }
+
+        .slide-main {
+          min-width: 0;
+        }
+
+        .slide-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          color: #6b7280;
+          font-size: 13px;
+        }
+
+        .slide-controls {
+          display: flex;
+          gap: 6px;
+        }
+
+        .slide-controls button {
+          width: 34px;
+          height: 30px;
+          border: 1px solid #d1d5db;
+          background: white;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+
+        .slide-controls button:disabled {
+          opacity: 0.4;
+          cursor: default;
+        }
+
+        .ppt-canvas {
+          background: #d1d5db;
+          padding: 25px;
+          border-radius: 15px;
+        }
+
+        .ppt-title-slide,
+        .ppt-content-slide {
+          background: white;
+          aspect-ratio: 16 / 9;
+          border-radius: 4px;
+          padding: 55px;
+          box-shadow:
+            0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .ppt-title-slide {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          position: relative;
+        }
+
+        .ppt-brand,
+        .ppt-small-label {
+          color: #4f46e5;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+        }
+
+        .ppt-title-slide h1 {
+          font-size: 44px;
+          max-width: 800px;
+          margin-top: 25px;
+          margin-bottom: 15px;
+        }
+
+        .ppt-title-slide p {
+          color: #6b7280;
+          font-size: 19px;
+        }
+
+        .ppt-footer {
+          position: absolute;
+          bottom: 35px;
+          left: 55px;
+          color: #9ca3af;
+          font-size: 11px;
+        }
+
+        .ppt-content-slide h1 {
+          font-size: 32px;
+          margin: 12px 0 8px;
+        }
+
+        .ppt-subtitle {
+          color: #6b7280;
+          font-size: 14px;
+          margin-top: 0;
+        }
+
+        .ppt-bullets {
+          margin-top: 35px;
+        }
+
+        .ppt-bullet {
+          display: flex;
+          gap: 18px;
+          padding: 14px 0;
+          border-bottom: 1px solid #e5e7eb;
+          font-size: 15px;
+          line-height: 1.5;
+        }
+
+        .ppt-bullet-number {
+          color: #4f46e5;
+          font-weight: 800;
+          min-width: 25px;
+        }
+
+        .ppt-bullet-dot {
+          color: #4f46e5;
+          min-width: 20px;
+        }
+
+        .ppt-theme-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 15px;
+          margin-top: 30px;
+        }
+
+        .ppt-theme {
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+          padding: 18px;
+        }
+
+        .ppt-theme-number {
+          color: #4f46e5;
+          font-size: 20px;
+          font-weight: 800;
+        }
+
+        .ppt-theme h3 {
+          margin: 8px 0;
+          font-size: 16px;
+        }
+
+        .ppt-theme span {
+          font-size: 9px;
+          color: #16a34a;
+          font-weight: 800;
+        }
+
+        .ppt-segment-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 15px;
+          margin-top: 30px;
+        }
+
+        .ppt-segment {
+          background: #f9fafb;
+          border-radius: 10px;
+          padding: 18px;
+        }
+
+        .ppt-segment h3 {
+          margin-top: 0;
+          font-size: 15px;
+        }
+
+        .ppt-segment p {
+          color: #6b7280;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .ppt-quote-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 15px;
+          margin-top: 30px;
+        }
+
+        .ppt-quote {
+          background: #f9fafb;
+          padding: 18px;
+          border-radius: 10px;
+          position: relative;
+        }
+
+        .quote-mark {
+          color: #4f46e5;
+          font-size: 30px;
+          font-weight: 800;
+        }
+
+        .ppt-quote p {
+          font-size: 13px;
+          line-height: 1.5;
+          font-style: italic;
+        }
+
+        .ppt-quote small {
+          color: #6b7280;
+          font-size: 9px;
+        }
+
+        .edit-slide {
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 20px;
+          margin-top: 15px;
+        }
+
+        .edit-slide label {
+          margin-top: 15px;
+          font-size: 13px;
+        }
+
+        .edit-slide input {
+          font-size: 14px;
+        }
+
+        .export-area {
+          margin-top: 30px;
+          background: #111827;
+          color: white;
+          border-radius: 18px;
+          padding: 30px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 30px;
+        }
+
+        .export-area h2 {
+          margin-bottom: 8px;
+        }
+
+        .export-area p {
+          color: #9ca3af;
+          max-width: 650px;
+          line-height: 1.5;
+        }
+
+        .export-button {
           background: #374151;
           color: #9ca3af;
           border: none;
+          padding: 14px 20px;
           border-radius: 9px;
           font-weight: 700;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 850px) {
+
+          .builder-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .presentation-workspace {
+            grid-template-columns: 1fr;
+          }
+
+          .slide-sidebar {
+            display: flex;
+            overflow-x: auto;
+          }
+
+          .slide-thumbnail {
+            min-width: 150px;
+          }
+
+          .export-area {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
         }
 
         @media (max-width: 700px) {
@@ -1243,6 +2484,23 @@ export default function Home() {
 
           .header-label {
             display: none;
+          }
+
+          .ppt-title-slide,
+          .ppt-content-slide {
+            padding: 25px;
+          }
+
+          .ppt-title-slide h1 {
+            font-size: 28px;
+          }
+
+          .ppt-content-slide h1 {
+            font-size: 24px;
+          }
+
+          .ppt-canvas {
+            padding: 10px;
           }
 
         }
