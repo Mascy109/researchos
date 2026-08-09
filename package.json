@@ -13,6 +13,7 @@
     "react-dom": "latest",
     "xlsx": "latest",
     "mammoth": "latest",
+    "openai": "latest",
     "pptxgenjs": "^3.12.0"
   }
 }
