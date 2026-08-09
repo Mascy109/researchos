@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "docx": "latest",
+    "mammoth": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
