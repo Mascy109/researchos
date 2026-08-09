@@ -8,12 +8,15 @@ export default function Home() {
   const [files, setFiles] = useState([]);
   const [extractedData, setExtractedData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState("");
 
   async function handleFiles(event) {
     const selectedFiles = Array.from(event.target.files);
 
     setFiles(selectedFiles);
     setExtractedData([]);
+    setAnalysis("");
     setLoading(true);
 
     const results = [];
@@ -46,19 +49,19 @@ export default function Home() {
           });
         }
 
-       if (file.name.toLowerCase().endsWith(".docx")) {
-  const buffer = await file.arrayBuffer();
+        if (file.name.toLowerCase().endsWith(".docx")) {
+          const buffer = await file.arrayBuffer();
 
-  const result = await mammoth.extractRawText({
-    arrayBuffer: buffer,
-  });
+          const result = await mammoth.extractRawText({
+            arrayBuffer: buffer,
+          });
 
-  results.push({
-    fileName: file.name,
-    type: "Word",
-    text: result.value,
-  });
-}
+          results.push({
+            fileName: file.name,
+            type: "Word",
+            text: result.value,
+          });
+        }
       } catch (error) {
         results.push({
           fileName: file.name,
@@ -70,6 +73,58 @@ export default function Home() {
 
     setExtractedData(results);
     setLoading(false);
+  }
+
+  async function analyzeResearch() {
+    if (extractedData.length === 0) {
+      return;
+    }
+
+    setAnalyzing(true);
+    setAnalysis("");
+
+    try {
+      let transcriptText = "";
+
+      for (const item of extractedData) {
+        if (item.type === "Word" && item.text) {
+          transcriptText += `\n\n--- ${item.fileName} ---\n\n`;
+          transcriptText += item.text;
+        }
+
+        if (item.type === "Excel") {
+          for (const sheet of item.sheets) {
+            transcriptText += `\n\n--- ${item.fileName} / ${sheet.sheetName} ---\n\n`;
+
+            for (const row of sheet.rows) {
+              transcriptText += row.join(" | ") + "\n";
+            }
+          }
+        }
+      }
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcript: transcriptText,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Analysis failed.");
+      }
+
+      setAnalysis(data.result);
+    } catch (error) {
+      setAnalysis(`Error: ${error.message}`);
+    } finally {
+      setAnalyzing(false);
+    }
   }
 
   return (
@@ -87,6 +142,8 @@ export default function Home() {
           margin: "auto",
         }}
       >
+        {/* Header */}
+
         <div style={{ marginBottom: "40px" }}>
           <div
             style={{
@@ -121,6 +178,8 @@ export default function Home() {
             respondent conversations into structured research insights.
           </p>
         </div>
+
+        {/* Upload section */}
 
         <div
           style={{
@@ -180,6 +239,8 @@ export default function Home() {
             />
           </label>
 
+          {/* Uploaded files */}
+
           {files.length > 0 && (
             <div style={{ marginTop: "30px" }}>
               <h3>Uploaded files</h3>
@@ -201,6 +262,8 @@ export default function Home() {
             </div>
           )}
 
+          {/* Loading */}
+
           {loading && (
             <p
               style={{
@@ -212,7 +275,34 @@ export default function Home() {
               Reading files...
             </p>
           )}
+
+          {/* Analyze button */}
+
+          {extractedData.length > 0 && !loading && (
+            <button
+              onClick={analyzeResearch}
+              disabled={analyzing}
+              style={{
+                width: "100%",
+                marginTop: "30px",
+                padding: "16px",
+                borderRadius: "10px",
+                border: "none",
+                background: analyzing ? "#9ca3af" : "#4f46e5",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "bold",
+                cursor: analyzing ? "not-allowed" : "pointer",
+              }}
+            >
+              {analyzing
+                ? "Analyzing Research..."
+                : "Analyze Research"}
+            </button>
+          )}
         </div>
+
+        {/* Extracted data */}
 
         {extractedData.length > 0 && (
           <div style={{ marginTop: "30px" }}>
@@ -232,9 +322,14 @@ export default function Home() {
               >
                 <h3>{result.fileName}</h3>
 
+                {/* Excel */}
+
                 {result.type === "Excel" &&
                   result.sheets.map((sheet, sheetIndex) => (
-                    <div key={sheetIndex} style={{ marginTop: "25px" }}>
+                    <div
+                      key={sheetIndex}
+                      style={{ marginTop: "25px" }}
+                    >
                       <h4>Sheet: {sheet.sheetName}</h4>
 
                       <table
@@ -245,22 +340,25 @@ export default function Home() {
                         }}
                       >
                         <tbody>
-                          {sheet.rows.slice(0, 30).map((row, rowIndex) => (
-                            <tr key={rowIndex}>
-                              {row.map((cell, cellIndex) => (
-                                <td
-                                  key={cellIndex}
-                                  style={{
-                                    border: "1px solid #e5e7eb",
-                                    padding: "8px",
-                                    verticalAlign: "top",
-                                  }}
-                                >
-                                  {String(cell)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
+                          {sheet.rows
+                            .slice(0, 30)
+                            .map((row, rowIndex) => (
+                              <tr key={rowIndex}>
+                                {row.map((cell, cellIndex) => (
+                                  <td
+                                    key={cellIndex}
+                                    style={{
+                                      border:
+                                        "1px solid #e5e7eb",
+                                      padding: "8px",
+                                      verticalAlign: "top",
+                                    }}
+                                  >
+                                    {String(cell)}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
                         </tbody>
                       </table>
 
@@ -272,21 +370,25 @@ export default function Home() {
                     </div>
                   ))}
 
-               {result.type === "Word" && (
-  <div
-    style={{
-      background: "#f9fafb",
-      padding: "20px",
-      borderRadius: "10px",
-      whiteSpace: "pre-wrap",
-      lineHeight: "1.6",
-      maxHeight: "500px",
-      overflowY: "auto",
-    }}
-  >
-    {result.text}
-  </div>
-)}
+                {/* Word */}
+
+                {result.type === "Word" && (
+                  <div
+                    style={{
+                      background: "#f9fafb",
+                      padding: "20px",
+                      borderRadius: "10px",
+                      whiteSpace: "pre-wrap",
+                      lineHeight: "1.6",
+                      maxHeight: "500px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {result.text}
+                  </div>
+                )}
+
+                {/* Error */}
 
                 {result.type === "Error" && (
                   <p style={{ color: "#dc2626" }}>
@@ -295,6 +397,52 @@ export default function Home() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* AI Analysis */}
+
+        {analyzing && (
+          <div
+            style={{
+              marginTop: "30px",
+              background: "white",
+              padding: "25px",
+              borderRadius: "15px",
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            <h2>Analyzing research...</h2>
+
+            <p style={{ color: "#6b7280" }}>
+              ResearchOS is reviewing the transcript evidence
+              and generating an initial insight.
+            </p>
+          </div>
+        )}
+
+        {analysis && !analyzing && (
+          <div
+            style={{
+              marginTop: "30px",
+              background: "white",
+              padding: "30px",
+              borderRadius: "15px",
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            <h2>AI Research Analysis</h2>
+
+            <div
+              style={{
+                marginTop: "20px",
+                whiteSpace: "pre-wrap",
+                lineHeight: "1.7",
+                color: "#374151",
+              }}
+            >
+              {analysis}
+            </div>
           </div>
         )}
       </div>
