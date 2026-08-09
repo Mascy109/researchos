@@ -46,14 +46,19 @@ export default function Home() {
           });
         }
 
-        if (file.name.toLowerCase().endsWith(".docx")) {
-          results.push({
-            fileName: file.name,
-            type: "Word",
-            message:
-              "Word file selected. Word extraction will be connected next.",
-          });
-        }
+       if (file.name.toLowerCase().endsWith(".docx")) {
+  const buffer = await file.arrayBuffer();
+
+  const result = await mammoth.extractRawText({
+    arrayBuffer: buffer,
+  });
+
+  results.push({
+    fileName: file.name,
+    type: "Word",
+    text: result.value,
+  });
+}
       } catch (error) {
         results.push({
           fileName: file.name,
