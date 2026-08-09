@@ -1,14 +1,70 @@
 "use client";
 
 import { useState } from "react";
+import * as XLSX from "xlsx";
 
 export default function Home() {
   const [files, setFiles] = useState([]);
+  const [extractedData, setExtractedData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleFiles = (event) => {
-    const selected = Array.from(event.target.files);
-    setFiles(selected);
-  };
+  async function handleFiles(event) {
+    const selectedFiles = Array.from(event.target.files);
+
+    setFiles(selectedFiles);
+    setExtractedData([]);
+    setLoading(true);
+
+    const results = [];
+
+    for (const file of selectedFiles) {
+      try {
+        if (file.name.toLowerCase().endsWith(".xlsx")) {
+          const buffer = await file.arrayBuffer();
+
+          const workbook = XLSX.read(buffer, {
+            type: "array",
+          });
+
+          const sheets = workbook.SheetNames.map((sheetName) => {
+            const worksheet = workbook.Sheets[sheetName];
+
+            return {
+              sheetName,
+              rows: XLSX.utils.sheet_to_json(worksheet, {
+                header: 1,
+                defval: "",
+              }),
+            };
+          });
+
+          results.push({
+            fileName: file.name,
+            type: "Excel",
+            sheets,
+          });
+        }
+
+        if (file.name.toLowerCase().endsWith(".docx")) {
+          results.push({
+            fileName: file.name,
+            type: "Word",
+            message:
+              "Word file selected. Word extraction will be connected next.",
+          });
+        }
+      } catch (error) {
+        results.push({
+          fileName: file.name,
+          type: "Error",
+          message: error.message,
+        });
+      }
+    }
+
+    setExtractedData(results);
+    setLoading(false);
+  }
 
   return (
     <main
@@ -19,10 +75,12 @@ export default function Home() {
         padding: "50px 25px",
       }}
     >
-      <div style={{ maxWidth: "1000px", margin: "auto" }}>
-
-        {/* Header */}
-
+      <div
+        style={{
+          maxWidth: "1100px",
+          margin: "auto",
+        }}
+      >
         <div style={{ marginBottom: "40px" }}>
           <div
             style={{
@@ -49,17 +107,14 @@ export default function Home() {
             style={{
               color: "#6b7280",
               fontSize: "18px",
-              maxWidth: "650px",
+              maxWidth: "700px",
               lineHeight: "1.6",
             }}
           >
             Upload your qualitative research transcripts and transform
-            respondent conversations into structured insights, evidence,
-            and eventually a complete presentation.
+            respondent conversations into structured research insights.
           </p>
         </div>
-
-        {/* Upload box */}
 
         <div
           style={{
@@ -67,13 +122,14 @@ export default function Home() {
             borderRadius: "18px",
             padding: "35px",
             border: "1px solid #e5e7eb",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
           }}
         >
-          <h2 style={{ marginTop: 0 }}>Upload research transcripts</h2>
+          <h2 style={{ marginTop: 0 }}>
+            Upload research transcripts
+          </h2>
 
           <p style={{ color: "#6b7280" }}>
-            Upload Word interview transcripts and Excel transcript files.
+            Supported formats: Word (.docx) and Excel (.xlsx)
           </p>
 
           <label
@@ -106,7 +162,7 @@ export default function Home() {
                 marginBottom: 0,
               }}
             >
-              .DOCX and .XLSX supported
+              You can select multiple files
             </p>
 
             <input
@@ -118,8 +174,6 @@ export default function Home() {
             />
           </label>
 
-          {/* Uploaded files */}
-
           {files.length > 0 && (
             <div style={{ marginTop: "30px" }}>
               <h3>Uploaded files</h3>
@@ -128,120 +182,106 @@ export default function Home() {
                 <div
                   key={index}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "15px 18px",
+                    padding: "15px",
                     background: "#f9fafb",
                     borderRadius: "10px",
                     marginTop: "10px",
                     border: "1px solid #e5e7eb",
                   }}
                 >
-                  <span>{file.name}</span>
-
-                  <span
-                    style={{
-                      color: "#16a34a",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Ready
-                  </span>
+                  {file.name}
                 </div>
               ))}
             </div>
           )}
 
-          {/* Analyze button */}
-
-          <button
-            disabled={files.length === 0}
-            style={{
-              width: "100%",
-              marginTop: "30px",
-              padding: "16px",
-              borderRadius: "10px",
-              border: "none",
-              background:
-                files.length > 0 ? "#4f46e5" : "#d1d5db",
-              color: "white",
-              fontSize: "16px",
-              fontWeight: "bold",
-              cursor:
-                files.length > 0 ? "pointer" : "not-allowed",
-            }}
-          >
-            Analyze Research
-          </button>
+          {loading && (
+            <p
+              style={{
+                marginTop: "25px",
+                color: "#4f46e5",
+                fontWeight: "600",
+              }}
+            >
+              Reading files...
+            </p>
+          )}
         </div>
 
-        {/* Future capabilities */}
+        {extractedData.length > 0 && (
+          <div style={{ marginTop: "30px" }}>
+            <h2>Extracted Research Data</h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "20px",
-            marginTop: "25px",
-          }}
-        >
-          <Card
-            number="01"
-            title="Themes"
-            text="Identify recurring themes and patterns across respondents."
-          />
+            {extractedData.map((result, index) => (
+              <div
+                key={index}
+                style={{
+                  background: "white",
+                  borderRadius: "15px",
+                  padding: "25px",
+                  marginTop: "20px",
+                  border: "1px solid #e5e7eb",
+                  overflowX: "auto",
+                }}
+              >
+                <h3>{result.fileName}</h3>
 
-          <Card
-            number="02"
-            title="Insights"
-            text="Turn respondent evidence into meaningful research insights."
-          />
+                {result.type === "Excel" &&
+                  result.sheets.map((sheet, sheetIndex) => (
+                    <div key={sheetIndex} style={{ marginTop: "25px" }}>
+                      <h4>Sheet: {sheet.sheetName}</h4>
 
-          <Card
-            number="03"
-            title="Presentation"
-            text="Turn the final research story into a professional presentation."
-          />
-        </div>
+                      <table
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          fontSize: "14px",
+                        }}
+                      >
+                        <tbody>
+                          {sheet.rows.slice(0, 30).map((row, rowIndex) => (
+                            <tr key={rowIndex}>
+                              {row.map((cell, cellIndex) => (
+                                <td
+                                  key={cellIndex}
+                                  style={{
+                                    border: "1px solid #e5e7eb",
+                                    padding: "8px",
+                                    verticalAlign: "top",
+                                  }}
+                                >
+                                  {String(cell)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {sheet.rows.length > 30 && (
+                        <p style={{ color: "#6b7280" }}>
+                          Showing the first 30 rows for preview.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+
+                {result.type === "Word" && (
+                  <p style={{ color: "#6b7280" }}>
+                    {result.message}
+                  </p>
+                )}
+
+                {result.type === "Error" && (
+                  <p style={{ color: "#dc2626" }}>
+                    Error: {result.message}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
-  );
-}
-
-function Card({ number, title, text }) {
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "25px",
-        borderRadius: "15px",
-        border: "1px solid #e5e7eb",
-      }}
-    >
-      <div
-        style={{
-          color: "#4f46e5",
-          fontWeight: "bold",
-          marginBottom: "12px",
-        }}
-      >
-        {number}
-      </div>
-
-      <h3 style={{ margin: "0 0 8px" }}>{title}</h3>
-
-      <p
-        style={{
-          color: "#6b7280",
-          lineHeight: "1.5",
-          margin: 0,
-        }}
-      >
-        {text}
-      </p>
-    </div>
   );
 }
