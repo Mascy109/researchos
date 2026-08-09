@@ -272,11 +272,21 @@ export default function Home() {
                     </div>
                   ))}
 
-                {result.type === "Word" && (
-                  <p style={{ color: "#6b7280" }}>
-                    {result.message}
-                  </p>
-                )}
+               {result.type === "Word" && (
+  <div
+    style={{
+      background: "#f9fafb",
+      padding: "20px",
+      borderRadius: "10px",
+      whiteSpace: "pre-wrap",
+      lineHeight: "1.6",
+      maxHeight: "500px",
+      overflowY: "auto",
+    }}
+  >
+    {result.text}
+  </div>
+)}
 
                 {result.type === "Error" && (
                   <p style={{ color: "#dc2626" }}>
