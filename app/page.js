@@ -5,18 +5,31 @@ import * as XLSX from "xlsx";
 import mammoth from "mammoth";
 
 export default function Home() {
+  const [step, setStep] = useState(1);
+
+  const [project, setProject] = useState({
+    name: "",
+    objective: "",
+    category: "",
+    audience: "",
+  });
+
   const [files, setFiles] = useState([]);
   const [extractedData, setExtractedData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState("");
+
+  function updateProject(field, value) {
+    setProject((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  }
 
   async function handleFiles(event) {
     const selectedFiles = Array.from(event.target.files);
 
     setFiles(selectedFiles);
     setExtractedData([]);
-    setAnalysis("");
     setLoading(true);
 
     const results = [];
@@ -75,56 +88,18 @@ export default function Home() {
     setLoading(false);
   }
 
-  async function analyzeResearch() {
-    if (extractedData.length === 0) {
+  function goToUpload() {
+    if (!project.name.trim()) {
+      alert("Please enter a project name.");
       return;
     }
 
-    setAnalyzing(true);
-    setAnalysis("");
-
-    try {
-      let transcriptText = "";
-
-      for (const item of extractedData) {
-        if (item.type === "Word" && item.text) {
-          transcriptText += `\n\n--- ${item.fileName} ---\n\n`;
-          transcriptText += item.text;
-        }
-
-        if (item.type === "Excel") {
-          for (const sheet of item.sheets) {
-            transcriptText += `\n\n--- ${item.fileName} / ${sheet.sheetName} ---\n\n`;
-
-            for (const row of sheet.rows) {
-              transcriptText += row.join(" | ") + "\n";
-            }
-          }
-        }
-      }
-
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transcript: transcriptText,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Analysis failed.");
-      }
-
-      setAnalysis(data.result);
-    } catch (error) {
-      setAnalysis(`Error: ${error.message}`);
-    } finally {
-      setAnalyzing(false);
+    if (!project.objective.trim()) {
+      alert("Please enter the research objective.");
+      return;
     }
+
+    setStep(2);
   }
 
   return (
@@ -133,316 +108,564 @@ export default function Home() {
         minHeight: "100vh",
         background: "#f6f7fb",
         fontFamily: "Arial, sans-serif",
-        padding: "50px 25px",
+        color: "#111827",
       }}
     >
-      <div
+      {/* TOP BAR */}
+
+      <header
         style={{
-          maxWidth: "1100px",
-          margin: "auto",
+          background: "#ffffff",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "20px 40px",
         }}
       >
-        {/* Header */}
-
-        <div style={{ marginBottom: "40px" }}>
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <div
             style={{
               color: "#4f46e5",
-              fontWeight: "bold",
-              fontSize: "14px",
+              fontWeight: "800",
+              fontSize: "18px",
               letterSpacing: "1px",
             }}
           >
             RESEARCHOS
           </div>
 
-          <h1
-            style={{
-              fontSize: "42px",
-              margin: "12px 0",
-              color: "#111827",
-            }}
-          >
-            Turn transcripts into research insights.
-          </h1>
-
-          <p
+          <div
             style={{
               color: "#6b7280",
-              fontSize: "18px",
-              maxWidth: "700px",
-              lineHeight: "1.6",
+              fontSize: "14px",
             }}
           >
-            Upload your qualitative research transcripts and transform
-            respondent conversations into structured research insights.
-          </p>
+            AI Research Workspace
+          </div>
         </div>
+      </header>
 
-        {/* Upload section */}
+      <div
+        style={{
+          maxWidth: "1000px",
+          margin: "auto",
+          padding: "55px 25px",
+        }}
+      >
+        {/* STEP INDICATOR */}
 
         <div
           style={{
-            background: "white",
-            borderRadius: "18px",
-            padding: "35px",
-            border: "1px solid #e5e7eb",
+            display: "flex",
+            alignItems: "center",
+            marginBottom: "45px",
           }}
         >
-          <h2 style={{ marginTop: 0 }}>
-            Upload research transcripts
-          </h2>
-
-          <p style={{ color: "#6b7280" }}>
-            Supported formats: Word (.docx) and Excel (.xlsx)
-          </p>
-
-          <label
+          <div
             style={{
-              display: "block",
-              border: "2px dashed #c7c9d9",
-              borderRadius: "15px",
-              padding: "55px 20px",
-              textAlign: "center",
-              cursor: "pointer",
-              marginTop: "25px",
+              color: step >= 1 ? "#4f46e5" : "#9ca3af",
+              fontWeight: "700",
             }}
           >
-            <div
-              style={{
-                fontSize: "40px",
-                marginBottom: "15px",
-              }}
-            >
-              ↑
-            </div>
+            01 Project Setup
+          </div>
 
-            <strong style={{ fontSize: "18px" }}>
-              Click to upload files
-            </strong>
+          <div
+            style={{
+              flex: 1,
+              height: "1px",
+              background: "#d1d5db",
+              margin: "0 20px",
+            }}
+          />
 
-            <p
-              style={{
-                color: "#9ca3af",
-                marginBottom: 0,
-              }}
-            >
-              You can select multiple files
-            </p>
+          <div
+            style={{
+              color: step >= 2 ? "#4f46e5" : "#9ca3af",
+              fontWeight: step >= 2 ? "700" : "400",
+            }}
+          >
+            02 Transcripts
+          </div>
 
-            <input
-              type="file"
-              multiple
-              accept=".docx,.xlsx"
-              onChange={handleFiles}
-              style={{ display: "none" }}
-            />
-          </label>
+          <div
+            style={{
+              flex: 1,
+              height: "1px",
+              background: "#d1d5db",
+              margin: "0 20px",
+            }}
+          />
 
-          {/* Uploaded files */}
+          <div
+            style={{
+              color: "#9ca3af",
+            }}
+          >
+            03 Analysis
+          </div>
 
-          {files.length > 0 && (
-            <div style={{ marginTop: "30px" }}>
-              <h3>Uploaded files</h3>
+          <div
+            style={{
+              flex: 1,
+              height: "1px",
+              background: "#d1d5db",
+              margin: "0 20px",
+            }}
+          />
 
-              {files.map((file, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: "15px",
-                    background: "#f9fafb",
-                    borderRadius: "10px",
-                    marginTop: "10px",
-                    border: "1px solid #e5e7eb",
-                  }}
-                >
-                  {file.name}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Loading */}
-
-          {loading && (
-            <p
-              style={{
-                marginTop: "25px",
-                color: "#4f46e5",
-                fontWeight: "600",
-              }}
-            >
-              Reading files...
-            </p>
-          )}
-
-          {/* Analyze button */}
-
-          {extractedData.length > 0 && !loading && (
-            <button
-              onClick={analyzeResearch}
-              disabled={analyzing}
-              style={{
-                width: "100%",
-                marginTop: "30px",
-                padding: "16px",
-                borderRadius: "10px",
-                border: "none",
-                background: analyzing ? "#9ca3af" : "#4f46e5",
-                color: "white",
-                fontSize: "16px",
-                fontWeight: "bold",
-                cursor: analyzing ? "not-allowed" : "pointer",
-              }}
-            >
-              {analyzing
-                ? "Analyzing Research..."
-                : "Analyze Research"}
-            </button>
-          )}
+          <div
+            style={{
+              color: "#9ca3af",
+            }}
+          >
+            04 Presentation
+          </div>
         </div>
 
-        {/* Extracted data */}
+        {/* STEP 1 */}
 
-        {extractedData.length > 0 && (
-          <div style={{ marginTop: "30px" }}>
-            <h2>Extracted Research Data</h2>
-
-            {extractedData.map((result, index) => (
-              <div
-                key={index}
+        {step === 1 && (
+          <div>
+            <div style={{ marginBottom: "35px" }}>
+              <h1
                 style={{
-                  background: "white",
-                  borderRadius: "15px",
-                  padding: "25px",
-                  marginTop: "20px",
-                  border: "1px solid #e5e7eb",
-                  overflowX: "auto",
+                  fontSize: "42px",
+                  margin: "0 0 12px 0",
                 }}
               >
-                <h3>{result.fileName}</h3>
+                Start a research project.
+              </h1>
 
-                {/* Excel */}
-
-                {result.type === "Excel" &&
-                  result.sheets.map((sheet, sheetIndex) => (
-                    <div
-                      key={sheetIndex}
-                      style={{ marginTop: "25px" }}
-                    >
-                      <h4>Sheet: {sheet.sheetName}</h4>
-
-                      <table
-                        style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          fontSize: "14px",
-                        }}
-                      >
-                        <tbody>
-                          {sheet.rows
-                            .slice(0, 30)
-                            .map((row, rowIndex) => (
-                              <tr key={rowIndex}>
-                                {row.map((cell, cellIndex) => (
-                                  <td
-                                    key={cellIndex}
-                                    style={{
-                                      border:
-                                        "1px solid #e5e7eb",
-                                      padding: "8px",
-                                      verticalAlign: "top",
-                                    }}
-                                  >
-                                    {String(cell)}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-
-                      {sheet.rows.length > 30 && (
-                        <p style={{ color: "#6b7280" }}>
-                          Showing the first 30 rows for preview.
-                        </p>
-                      )}
-                    </div>
-                  ))}
-
-                {/* Word */}
-
-                {result.type === "Word" && (
-                  <div
-                    style={{
-                      background: "#f9fafb",
-                      padding: "20px",
-                      borderRadius: "10px",
-                      whiteSpace: "pre-wrap",
-                      lineHeight: "1.6",
-                      maxHeight: "500px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    {result.text}
-                  </div>
-                )}
-
-                {/* Error */}
-
-                {result.type === "Error" && (
-                  <p style={{ color: "#dc2626" }}>
-                    Error: {result.message}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* AI Analysis */}
-
-        {analyzing && (
-          <div
-            style={{
-              marginTop: "30px",
-              background: "white",
-              padding: "25px",
-              borderRadius: "15px",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <h2>Analyzing research...</h2>
-
-            <p style={{ color: "#6b7280" }}>
-              ResearchOS is reviewing the transcript evidence
-              and generating an initial insight.
-            </p>
-          </div>
-        )}
-
-        {analysis && !analyzing && (
-          <div
-            style={{
-              marginTop: "30px",
-              background: "white",
-              padding: "30px",
-              borderRadius: "15px",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <h2>AI Research Analysis</h2>
+              <p
+                style={{
+                  color: "#6b7280",
+                  fontSize: "18px",
+                  lineHeight: "1.6",
+                  margin: 0,
+                }}
+              >
+                Tell ResearchOS what you're researching before
+                uploading your transcripts.
+              </p>
+            </div>
 
             <div
               style={{
-                marginTop: "20px",
-                whiteSpace: "pre-wrap",
-                lineHeight: "1.7",
-                color: "#374151",
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "18px",
+                padding: "35px",
               }}
             >
-              {analysis}
+              {/* PROJECT NAME */}
+
+              <div style={{ marginBottom: "25px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "700",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Project name
+                </label>
+
+                <input
+                  value={project.name}
+                  onChange={(event) =>
+                    updateProject("name", event.target.value)
+                  }
+                  placeholder="e.g. Cement Brand Equity Study"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "14px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "10px",
+                    fontSize: "16px",
+                  }}
+                />
+              </div>
+
+              {/* OBJECTIVE */}
+
+              <div style={{ marginBottom: "25px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "700",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Research objective
+                </label>
+
+                <textarea
+                  value={project.objective}
+                  onChange={(event) =>
+                    updateProject(
+                      "objective",
+                      event.target.value
+                    )
+                  }
+                  placeholder="What do you want this research to understand?"
+                  rows={5}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "14px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "10px",
+                    fontSize: "16px",
+                    resize: "vertical",
+                    fontFamily: "Arial, sans-serif",
+                  }}
+                />
+              </div>
+
+              {/* CATEGORY */}
+
+              <div style={{ marginBottom: "25px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "700",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Category / market
+                </label>
+
+                <input
+                  value={project.category}
+                  onChange={(event) =>
+                    updateProject(
+                      "category",
+                      event.target.value
+                    )
+                  }
+                  placeholder="e.g. FMCG, Automotive, Construction"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "14px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "10px",
+                    fontSize: "16px",
+                  }}
+                />
+              </div>
+
+              {/* AUDIENCE */}
+
+              <div style={{ marginBottom: "35px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "700",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Target audience
+                </label>
+
+                <input
+                  value={project.audience}
+                  onChange={(event) =>
+                    updateProject(
+                      "audience",
+                      event.target.value
+                    )
+                  }
+                  placeholder="e.g. Urban home builders"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "14px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "10px",
+                    fontSize: "16px",
+                  }}
+                />
+              </div>
+
+              {/* BUTTON */}
+
+              <button
+                onClick={goToUpload}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  background: "#4f46e5",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                Continue to Transcripts →
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+
+        {step === 2 && (
+          <div>
+            <div style={{ marginBottom: "35px" }}>
+              <h1
+                style={{
+                  fontSize: "38px",
+                  margin: "0 0 12px 0",
+                }}
+              >
+                Upload your transcripts.
+              </h1>
+
+              <p
+                style={{
+                  color: "#6b7280",
+                  fontSize: "17px",
+                }}
+              >
+                {project.name}
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "18px",
+                padding: "35px",
+              }}
+            >
+              <label
+                style={{
+                  display: "block",
+                  border: "2px dashed #c7c9d9",
+                  borderRadius: "15px",
+                  padding: "55px 20px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "40px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  ↑
+                </div>
+
+                <strong
+                  style={{
+                    fontSize: "18px",
+                  }}
+                >
+                  Click to upload transcripts
+                </strong>
+
+                <p
+                  style={{
+                    color: "#9ca3af",
+                    marginBottom: 0,
+                  }}
+                >
+                  Word (.docx) and Excel (.xlsx)
+                </p>
+
+                <input
+                  type="file"
+                  multiple
+                  accept=".docx,.xlsx"
+                  onChange={handleFiles}
+                  style={{ display: "none" }}
+                />
+              </label>
+
+              {files.length > 0 && (
+                <div style={{ marginTop: "30px" }}>
+                  <h3>
+                    {files.length} file
+                    {files.length !== 1 ? "s" : ""} uploaded
+                  </h3>
+
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: "14px",
+                        background: "#f9fafb",
+                        borderRadius: "10px",
+                        marginTop: "8px",
+                        border:
+                          "1px solid #e5e7eb",
+                      }}
+                    >
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {loading && (
+                <p
+                  style={{
+                    marginTop: "25px",
+                    color: "#4f46e5",
+                    fontWeight: "600",
+                  }}
+                >
+                  Processing files...
+                </p>
+              )}
+
+              {extractedData.length > 0 &&
+                !loading && (
+                  <div
+                    style={{
+                      marginTop: "30px",
+                      padding: "20px",
+                      background: "#f0fdf4",
+                      borderRadius: "12px",
+                      border:
+                        "1px solid #bbf7d0",
+                    }}
+                  >
+                    <strong
+                      style={{
+                        color: "#166534",
+                      }}
+                    >
+                      ✓ Transcripts processed
+                    </strong>
+
+                    <p
+                      style={{
+                        color: "#166534",
+                        marginBottom: 0,
+                      }}
+                    >
+                      ResearchOS has successfully
+                      extracted the transcript data.
+                    </p>
+                  </div>
+                )}
+            </div>
+
+            {/* PROJECT SUMMARY */}
+
+            <div
+              style={{
+                marginTop: "25px",
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "18px",
+                padding: "30px",
+              }}
+            >
+              <h3
+                style={{
+                  marginTop: 0,
+                }}
+              >
+                Research brief
+              </h3>
+
+              <p>
+                <strong>Objective:</strong>{" "}
+                {project.objective}
+              </p>
+
+              {project.category && (
+                <p>
+                  <strong>Category:</strong>{" "}
+                  {project.category}
+                </p>
+              )}
+
+              {project.audience && (
+                <p>
+                  <strong>Audience:</strong>{" "}
+                  {project.audience}
+                </p>
+              )}
+            </div>
+
+            {/* FUTURE WORKSPACE PREVIEW */}
+
+            {extractedData.length > 0 &&
+              !loading && (
+                <div
+                  style={{
+                    marginTop: "30px",
+                    background: "#111827",
+                    color: "#ffffff",
+                    borderRadius: "18px",
+                    padding: "30px",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "#a5b4fc",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      letterSpacing: "1px",
+                    }}
+                  >
+                    NEXT
+                  </div>
+
+                  <h2
+                    style={{
+                      margin: "10px 0",
+                    }}
+                  >
+                    Build your research analysis
+                  </h2>
+
+                  <p
+                    style={{
+                      color: "#d1d5db",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    Once the analysis engine is connected,
+                    ResearchOS will identify themes,
+                    patterns, respondent differences,
+                    evidence and insights from these
+                    transcripts.
+                  </p>
+
+                  <button
+                    disabled
+                    style={{
+                      marginTop: "10px",
+                      padding: "14px 20px",
+                      border: "none",
+                      borderRadius: "9px",
+                      background: "#374151",
+                      color: "#9ca3af",
+                      fontWeight: "700",
+                      cursor: "not-allowed",
+                    }}
+                  >
+                    Analysis Engine — Coming Next
+                  </button>
+                </div>
+              )}
           </div>
         )}
       </div>
