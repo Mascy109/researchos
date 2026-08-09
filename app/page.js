@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import * as XLSX from "xlsx";
+import mammoth from "mammoth";
 
 export default function Home() {
   const [files, setFiles] = useState([]);
