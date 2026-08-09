@@ -1,13 +1,10 @@
-import OpenAI from "openai";
+export const dynamic = "force-dynamic";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import OpenAI from "openai";
 
 export async function POST(request) {
   try {
     const body = await request.json();
-
     const transcript = body.transcript;
 
     if (!transcript) {
@@ -16,6 +13,10 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
     const response = await openai.responses.create({
       model: "gpt-5.6",
@@ -47,7 +48,7 @@ Return:
 
     return Response.json(
       {
-        error: "AI analysis failed.",
+        error: error.message || "AI analysis failed.",
       },
       { status: 500 }
     );
